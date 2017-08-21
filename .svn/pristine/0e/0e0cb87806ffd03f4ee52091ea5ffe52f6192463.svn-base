@@ -1,0 +1,172 @@
+package netcracker.developer.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import netcracker.developer.viewBean.LoginBean;
+import netcracker.developer.viewBean.QuestionBean;
+import netcracker.developer.imp.WarningMsg;
+import netcracker.developer.service.AnswerService;
+import netcracker.developer.viewBean.AnswerBean;
+@Controller
+public class AnswerController {
+
+	
+	@Autowired
+	private AnswerService answerService;
+	
+	@RequestMapping(value = "/adminWelcome2", method = RequestMethod.POST)
+	public String displayRegAdmin(HttpServletRequest request, HttpServletResponse response,@ModelAttribute() AnswerBean answerBean,
+			BindingResult result,@RequestParam("solutionDesc") String solutionDesc) {
+		HttpSession session = request.getSession(false);
+		String user=(String)session.getAttribute("role");
+		if((user == null)&&(user!="admin")){
+			ModelAndView model=new ModelAndView("login");
+			request.setAttribute("message","InValid Access Please Log In To Continue");
+			return "redirect:/logout";
+		}
+		else{
+		
+		String username=(String) session.getAttribute("loggedInUser");
+		int queryId=(int) session.getAttribute("qId");
+		answerService.insertAnswer(answerBean, username,queryId);
+		session.removeAttribute("qId");
+		return "redirect:/adminWelcome2?queryId="+queryId;
+		
+	}
+	
+	}
+	@RequestMapping(value= "/adminWelcome2", method = RequestMethod.GET)
+	public ModelAndView postAnswersAdmin(@RequestParam("queryId") int queryId,HttpServletRequest request,HttpServletResponse response ,
+			@ModelAttribute AnswerBean answerBean,@ModelAttribute("QuestionBean") QuestionBean questionBean,@ModelAttribute LoginBean loginBean) {
+		
+		HttpSession session = request.getSession(false);
+		String user=(String)session.getAttribute("role");
+		if((user == null)&&(user!="admin")){
+			ModelAndView model=new ModelAndView("login");
+			request.setAttribute("message","InValid Access Please Log In To Continue");
+			
+			String msg="InValid Access Please Log In To Continue";
+			WarningMsg.showDialog(msg);
+		
+			model.addObject("loginBean", loginBean);
+			return model;
+		}
+		else{
+		List<AnswerBean> answerList=new ArrayList<AnswerBean>();
+		List<QuestionBean> queList=new ArrayList<QuestionBean>();
+		
+		String username=(String) session.getAttribute("loggedInUser");
+		answerList=answerService.getAnswers(answerBean, queryId);
+		
+		queList=answerService.getQuestion(questionBean, queryId);
+		//answerService.increaseAnswer(questionBean);
+		
+		
+		session.setAttribute("qId",queryId);
+		request.setAttribute("mes", "Posted successfull");
+		ModelAndView model=new ModelAndView("adminWelcome2");
+		model.addObject("answerList",answerList);
+		model.addObject("queList",queList);
+		System.out.println("hi");
+		
+		return model;
+	}
+	}
+	
+	/**
+	 * 
+	 */
+	
+	@RequestMapping(value = "/memberWelcome2", method = RequestMethod.POST)
+	public String displayRegMember(HttpServletRequest request, HttpServletResponse response,
+			@ModelAttribute("QuestionBean") QuestionBean questionBean,@ModelAttribute("AnswerBean") AnswerBean answerBean) {
+		
+			HttpSession session = request.getSession(false);
+			String user=(String)session.getAttribute("role");
+			if((user == null)&&(user!="member")){
+				ModelAndView model=new ModelAndView("login");
+				request.setAttribute("message","InValid Access Please Log In To Continue");
+				return "redirect:/logout";
+			}
+			else{
+		String username=(String) session.getAttribute("loggedInUser");
+		int queryId=(int) session.getAttribute("qId");
+		answerService.insertAnswer(answerBean, username,queryId);
+		session.removeAttribute("qId");
+		return "redirect:/memberWelcome2?queryId="+queryId;
+		}
+		
+	}
+	@RequestMapping(value= "/memberWelcome2", method = RequestMethod.GET)
+	public ModelAndView postAnswersMember(@RequestParam("queryId") int queryId,HttpServletRequest request,HttpServletResponse response ,
+			@RequestAttribute("AnswerBean") AnswerBean answerBean,BindingResult result,@ModelAttribute("QuestionBean") QuestionBean questionBean,
+			@ModelAttribute LoginBean loginBean) {
+		
+		HttpSession session = request.getSession(false);
+		String user=(String)session.getAttribute("role");
+		if((user == null)&&(user!="member")){
+			ModelAndView model=new ModelAndView("login");
+			request.setAttribute("message","InValid Access Please Log In To Continue");
+			
+			String msg="InValid Access Please Log In To Continue";
+			WarningMsg.showDialog(msg);
+		
+			model.addObject("loginBean", loginBean);
+			return model;
+		}
+		else{
+		List<AnswerBean> answerList=new ArrayList<AnswerBean>();
+		List<QuestionBean> queList=new ArrayList<QuestionBean>();
+		
+		
+		String username=(String) session.getAttribute("loggedInUser");
+		answerList=answerService.getAnswers(answerBean, queryId);
+		queList=answerService.getQuestion(questionBean, queryId);
+		//answerService.insertAnswer(answerBean, username,queryId);
+		//answerService.increaseAnswer(questionBean);
+		
+		session.setAttribute("qId",queryId);
+		request.setAttribute("mes", "Posted successfull");
+		ModelAndView model=new ModelAndView("memberWelcome2");
+		model.addObject("answerList",answerList);
+		model.addObject("queList",queList);
+		return model;
+	}
+		
+	}
+	
+	
+	@RequestMapping(value= "/guestWelcome2", method = RequestMethod.GET)
+	public ModelAndView postAnswersGuest(@RequestParam("queryId") int queryId,HttpServletRequest request,HttpServletResponse response ,
+			@ModelAttribute("AnswerBean") AnswerBean answerBean,@ModelAttribute("QuestionBean") QuestionBean questionBean,BindingResult result,@ModelAttribute LoginBean loginBean) {
+		List<AnswerBean> answerList=new ArrayList<AnswerBean>();
+		List<QuestionBean> queList=new ArrayList<QuestionBean>();
+		
+		
+		answerList=answerService.getAnswers(answerBean, queryId);
+		queList=answerService.getQuestion(questionBean, queryId);
+		
+		ModelAndView model=new ModelAndView("guestWelcome2");
+		model.addObject("answerList",answerList);
+		model.addObject("queList",queList);
+		
+		
+		return model;
+	}
+	
+}
